@@ -100,6 +100,10 @@
     3. Must work on any source code regardless of whether the code is
        represented ("loaded") in the live image.
 
+** Basis for an Improved Terminal REPL
+
+   A proper implementation of this https://techfak.de/~jmoringe/linedit-1.ogv.
+
 ** Basis for a Common Lisp Language Server
 
    An implementation of the [[https://microsoft.github.io/language-server-protocol/][Language Server Protocol]] for Common Lisp
@@ -112,8 +116,12 @@
 
 ** Source Code Highlighting for a Documentation Formatting System
 
-   for highlighting and cross-referencing source code snippets within
-   technical documentation
+   For highlighting and cross-referencing source code snippets within
+   technical documentation.
+
+   Essentially a better version of the syntax highlighting and links
+   in this
+   https://techfak.de/~jmoringe/presentation-eclector/slides.html#/slide-slide%3Aerrors%3Arecovery-example-2
 
 ** Basis for Batch Static Analysis Tools
 
@@ -132,14 +140,19 @@
     + Support display with variable width fonts
     + Support link to AST or semantic level
     + Support comments and other normally skipped input
+    + Highlighting should be able to depend on context: quoted
+      material that is the first argument of src_lisp[]{make-instance}
+      is a class name.
   + Non-functional
     + Flicker-free redisplay
     + Process and redisplay at higher speed than typing speed
     + Display code should be independent of syntax if possible
+    + Must handle large amounts of source code (maybe around 1 MLoC?)
+      in memory.
 
 * Design
 
-** Modules Responsibilities
+** Modules and Responsibilities
 
    + Buffer ::
    + Analyzer ::
