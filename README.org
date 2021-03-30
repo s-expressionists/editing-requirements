@@ -68,11 +68,26 @@
        (*including variable-width fonts*) and colors used to display
        source code in order to meet my aesthetic and ergonomic needs.
 
+    7. As a user of the IDE, I would like to hover the pointer over,
+       or move the cursor to, a variable or a function name, and have
+       all occurrences of the same object (considering lexical and so
+       on) be highlighted (perhaps using a different style of
+       highlighting, like changing the background color) so I can
+       immediately estimate the impact of changes and maybe also
+       initiate certain changes.
+
 *** Editing
 
     1. As a user of the IDE, I want to be able to edit with multiple
        cursors, so I can perform similar operations at multiple
        locations at once and thus save typing.
+
+    2. As a user of the IDE, I would like to perform editing
+       operations on objects in the source code that consider their
+       semantics in order to preserve the validity of the code more
+       easily (Like perhaps a cursor positioned to each occurrence.
+       Or perhaps saving three positions in a secret place that I can
+       later jump to. Or something like that.)
 
 *** Errors
 
