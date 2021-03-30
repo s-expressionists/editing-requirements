@@ -1,0 +1,342 @@
+#+TITLE: Requirement Analysis for a Common Lisp Editing and Parsing Framework
+
+#+OPTIONS: toc:1
+
+#+STARTUP: outline
+#+HTML_HEAD_EXTRA: <style>body { width: 60%; margin-left: 20% } body { margin:40px auto; line-height:1.6; font-size:18px; color:#444; padding:0 10px } h1,h2,h3 { line-height:1.2 } .sidenote { display: block; float: right; width: 30%; border: 2px solid #888; margin: 20px; padding: 3px; }</style>
+
+#+MACRO: cl Common Lisp
+
+* Introduction
+
+  The purpose of this document is to write down already discussed as
+  well as additional requirements and design considerations for
+  software modules that edit, parse, analyze and present {{{cl}}}
+  code.
+
+** Scope
+
+   Out of scope:
+   + Command processing
+   + Syntax highlighting themes
+   + Completion
+   + Indentation
+   + New input editor for McCLIM
+   + Full-blown IDE
+
+* Usage Scenarios
+
+** Source Code Editor for a Future Common Lisp IDE
+
+   This scenario is concerned with a graphical (as in not limited by
+   capabilities of text-based terminals) editor/IDE for text-based
+   editing (as in not a structure editor) of Common Lisp source code.
+
+*** Source Code Display
+
+    1. As a user of the IDE, I want the source code to be highlighted
+       according to syntactic and semantic properties (examples:
+       symbol and package status, commented/skipped, evaluated
+       vs. unevaluated vs. quasiquote level, namespace, defined
+       vs. undefined) in order to grasp the aspects relevant to me
+       more quickly.
+
+    2. As a user of the IDE, I want to see the relation between the
+       source code and the/a live image in order to not accidentally
+       run old code. (Example: Renaming a function in the source code
+       leads to two differences: 1) a function in the live image is no
+       longer backed by code 2) a function in the source code is not
+       present in the image)
+
+    3. As a user of the IDE, I want to affect the live image by
+       performing commands directly on objects in the source code
+       (examples: (un)evaluate definition, (un)comment definition,
+       (un)trace function) so that I don't have to type names of
+       things.
+
+    4. As a user of the IDE, I want to browse and query the *lexical*
+       structure of the code within files (example structure:
+       in-packages » toplevel definitions » contained slots, local
+       functions) in order get a quick overview and navigate quickly.
+
+    5. As a user of the IDE, I want to browse and query the *logical*
+       structure of the code across files (example structure:
+       in-packages » generic function » methods) in order get a quick
+       overview and navigate quickly.
+
+    6. As a user of the IDE, I want to be able to configure the fonts
+       (*including variable-width fonts*) and colors used to display
+       source code in order to meet my aesthetic and ergonomic needs.
+
+*** Editing
+
+    1. As a user of the IDE, I want to be able to edit with multiple
+       cursors, so I can perform similar operations at multiple
+       locations at once and thus save typing.
+
+*** Errors
+
+    1. As a user of the IDE, I want to be immediately notified of
+       syntactic and statically detectable problems with the code I
+       entered.
+
+    2. As a user of the IDE, I want errors, warnings and notes
+       pertaining to the source to be indicated in the [[term-fringe][fringe area]] in
+       order to quickly spot problematic lines.
+
+    3. As a user of the IDE, I want errors that concern multiple
+       locations (examples: redefinition of a function or method
+       within a single file, invalid declarations and the thing they
+       pertain to) to be indicated in a suitable manner so I don't
+       have to manually resolve line numbers or other location
+       encodings.
+
+*** Non-functional requirements:
+
+    1. Flicker-free updates
+
+    2. Parsing, analysis and feedback at typing speed
+
+    3. Must work on any source code regardless of whether the code is
+       represented ("loaded") in the live image.
+
+** Basis for a Common Lisp Language Server
+
+   An implementation of the [[https://microsoft.github.io/language-server-protocol/][Language Server Protocol]] for Common Lisp
+   allows editors and IDEs to support some aspect of Common Lisp
+   development. There are already such implementations but they seem
+   to be based on 1) regular expressions for syntax 2) SWANK for
+   semantics. The former limits the precision and depth of analysis,
+   the latter limits some features to code that is/can be loaded into
+   the live image.
+
+** Source Code Highlighting for a Documentation Formatting System
+
+   for highlighting and cross-referencing source code snippets within
+   technical documentation
+
+** Basis for Batch Static Analysis Tools
+
+   running "deeper" and more global static analyses on larger bodies
+   of code as a batch process (e.g. looking at all methods of a
+   generic function within a whole code base to validate adherence to
+   a defined protocol)
+
+* Requirements
+
+  This section is intended to extract and condense requirements from
+  the different [[*Usage Scenarios][scenarios]] into a single list:
+
+  + Functional
+    + Support multiple syntaxes
+    + Support display with variable width fonts
+    + Support link to AST or semantic level
+    + Support comments and other normally skipped input
+  + Non-functional
+    + Flicker-free redisplay
+    + Process and redisplay at higher speed than typing speed
+    + Display code should be independent of syntax if possible
+
+* Design
+
+** Modules Responsibilities
+
+   + Buffer ::
+   + Analyzer ::
+   + View ::
+   + Concrete Syntax Representation ::
+   + Abstract Syntax Representation ::
+   + Character Syntax Parser ::
+   + S-expression Syntax Parser ::
+   + File syntax Parser ::
+
+* Unsorted
+
+** Result Representation
+
+   1. Single result tree (somehow combining e.g. CST and AST)
+
+      + Could be good for structure-based editing and movement
+        ("forward-expression", "move up", paredit operations)
+
+      + Likely hard to construct in a technically and theoretically
+        sound way (e.g. How would AST nodes store CST children?)
+
+   2. Multiple result trees for e.g. CST and AST with "origin" or
+      "source" links between the phases
+
+      + Relatively straightforward to construct
+
+** Two Strategies
+
+   1. Traverse syntax tree outputting chunks of text
+
+   2. Iterate through text characters and track current path in syntax
+      tree
+
+* References and Related Work
+
+  + Climacs and DREI
+  + Second Climacs
+  + Emacs, LEM, etc.
+
+* Discussions
+#+BEGIN_EXAMPLE
+  <scymtym> beach: regarding future work, i'm not sure. i will probably try to hook up the s-expression-level parsing as a tech demo and as a debug tool for the parsing machinery. i guess the central question is whether i'm making a throw-away adapter without touching DREI much or whether i will try to improve DREI. i don't think i understand DREI well enough to make such a decision yet
+  <scymtym> considering things from the requirements perspective, i often wished i had a CLIM-based code editor with syntax (or semantics) highlighting and annotations under my control. DREI would be the obvious solution, but it may not be the best one. i guess there are also jackdaniel's plans for a new editor and your architecture for second climacs to consider
+  <scymtym> even more broadly, i may also try to package the parsing and static analysis stuff as a language server again since that seems to be a thing people want
+  <beach> scymtym: Thanks for the overview.  I know what solution I would personally prefer, of course.
+  <scymtym> beach: which one would that be?
+  <beach> Well, I think DREI is doomed as an input editor, given jackdaniel's plans, and, like I said, I am not sure all those features are needed in an input editor, so that would be fine with me.
+  <beach> But we still need a full Common Lisp editor in Common Lisp and CLIM/McCLIM.
+  <beach> I am not particularly attached to the code base of Second Climacs, but I do think the buffer management and the Common Lisp parsing mechanism is the right one.
+  <beach> So, we could start from scratch if you like, just keeping the buffer and the parser.
+  <beach> The crucial missing link I think is indentation.
+  <beach> I have had some ideas about that, but haven't had time to act upon them.
+  <beach> But I have been a little confused by your experiments...
+  <beach> I can't tell whether they are throw-away experiments, or whether you are working on something more permanent.
+  <beach> But it seems you haven't decided that yet.
+  <scymtym> right, i don't know yet either in some cases. i'm pretty certain that i want eclector and the s-expression parser as the base. i also have a "file syntax" system that is responsible for reading multiple toplevel forms and managing environments. i think something like that will be needed and it is probably good to keep it separate from an editor's parsing logic (unlike the module structure used by DREI)
+  <scymtym> everything above that level are throw-away experiments so far. i will probably keep working on the SBCL IR and BIR visualizers if people find them useful but they don't impose many requirements on the design and generally touch input editing only tangentially
+  <beach> I am more "worried" about the low-level parts of your experiments.  It seems to me that Cluffer and the incremental parser of Second Climacs would be an ideal basis for all the rest.
+  <beach> But you never mention those, so I am not sure whether you have decided you don't want those.
+  <beach> Well, not the basis for everything, of course.
+  <beach> Sometimes, you don't need to parse program text at all, like if it is already available as s-experssions.
+  <beach> expressions
+  <scymtym> those are multiple aspects. can you describe the use-case in which the s-experssions are already available?
+  <beach> No. :)
+  <beach> I don't know of such a scenario right now.  But I can imagine one.
+  <scymtym> ok, but the other point is important as well
+  <beach> What other point?
+  <scymtym> using cluffer/second climacs instead of DREI's buffer and incremental parsing
+  <beach> Ah, yes.  DREI's technique is dead.
+  <beach> So it seems to me that we (you and me at least) should agree on a common base for future work.
+  <beach> And, again, since you haven't told me your opinion on the Second Climacs technique, I don't know what to think.
+  <scymtym> is the probably with DREI the architecture or the parsing technique(s)?
+  <scymtym> *is the problem
+  <beach> Both.
+  <beach> The buffer representation is not good, and it uses a parsing technique that doesn't scale, and that is as broken as regular expressions.
+  <scymtym> i had the expression that the parsing technique can by chosen by the syntax implementation, that's why i ask
+  <beach> Indeed it can.  So I guess it would be technically possible to plug in the parsing technique of Second Climacs.
+  <beach> But then what is left?
+  <scymtym> and the buffer representation seems to allow for different implementations as well
+  <beach> Only the buffer representation.  And it is broken too.
+  <beach> OK, then you tell me what is left if we replace both those.
+  <scymtym> i think the redisplay engine and command processing are other more or less separate parts
+  <scymtym> but there may be better ways do implement those, of course
+  <beach> Fine, command processing can be re-used.  I don't think it is broken.
+  <beach> But redisplay is probably also broken.
+  <scymtym> in fact, the presence of ESA in DREI i something that i deeply dislike
+  <beach> Cluffer was designed to allow multiple windows into the same buffer, and I don't think DREI can handle that very well.
+  <beach> So I think we just killed the last component of DREI, no?
+  <scymtym> there can be multiple VIEWs, each with its own SYNTAX, i think
+  <scymtym> note that i'm not trying to defend DREI
+  <beach> Perhaps, but it is not incrementally updated as Cluffer allows.
+  <scymtym> i want to understand what the flaws are before we start from scratch
+  <beach> Sure.
+  <scymtym> i mean the fundamental flaws, as a code base, DREI is pretty bad, but that could in theory be fixed
+  <beach> So here is what I think...
+  <beach> I think we (and by "we", I mainly mean "I") have learned a lot since (first) Climacs and DREI were written.  I also think that most of it is broken.  Finally I think starting from scratch is not a big deal.  And editor like that is not very complicated, aside from the stuff that must be replaced anyway.
+  <scymtym> would processing without displaying anything be in scope for cluffer/second climacs? this comes up when implementing a language server since the editor does all the display and only send buffer contents and modification commands to the language server
+  <beach> Definitely.
+  <beach> Cluffer is designed so that observers decide when to redisplay.
+  <beach> And what they then do is to incrementally update their view of the buffer contents.
+  <beach> So there is no observer visible to Cluffer.
+  <scymtym> and the "view" could also be, for example, an AST and list of errors to send to some editor instead of something displayed to the user in some fashion?
+  <beach> I think ESA was an interesting idea, but it wasn't done right.
+  <beach> I think that would be entirely possible.
+  <scymtym> where would cursors, motion, text manipulation commands, etc. go in this architecture? a separate layer on top?
+  <beach> Yes.  The Cluffer design allows for higher level editing commands to be implemented as repeated invocation of lower-level commands in an efficient way, so it proposes only the basic stuff.
+  <beach> Cluffer allows for clients to create cursors and it moves them appropriately when text is altered.
+  <scymtym> i see. so i think a minimal useful module would provide a buffer with fundamental modification operations and cursors as well as a view that associates an incrementally maintained analysis result with the buffer
+  <scymtym> does that make sense?
+  <beach> Yes, and that is the current state of Second Climacs.  Plus a bit more for the incremental Common Lisp parser, of course.
+  <scymtym> things to implement on top of this would be: complex editing commands for users, graphical display, language server and probably other thins as well
+  <scymtym> *things
+  <beach> Sure.  "graphical display"?
+  <scymtym> i assume this basic module wouldn't know anything about CLIM, terminals or other forms of displaying the buffer content
+  <beach> Yes, I see.  Sure.  Thought I did implement a primitive display module too.  Based on explicit manipulation of output records, so designed to be fast for large displays.
+  <beach> That one could be ripped out.  I am not particular proud of it.  But I think manipulating output records explicitly is the right approach.
+  <scymtym> my initial hunch is to provide all forms of textual or graphical presentation as separate modules
+  <beach> Sounds right.
+  <scymtym> ok, i will study the second climacs code base (again)
+  <beach> So the incremental parser is an intermediate between the buffer and the display.
+  <beach> It is part of the observer.
+  <beach> It structures the contents of the buffer into nested "parse results".
+  <scymtym> that's similar to what i do. with DREI, i then have to look through the parse result tree and find the correct node for a given input position
+  <beach> I see.
+  <scymtym> it would be nice to do that in a less roundabout way
+  <beach> I agree.
+  <beach> I am not sure I found a good solution to that problem.
+  <beach> If you have any question about Second Climacs, don't hesitate.  And remember that I am not proud of the organization of the code.  Only of those two things: the buffer and the incremental parser.
+  <scymtym> ok
+  <scymtym> one more thing, though: do you think something like parsing code snippets for syntax highlighting and cross-referencing in a documentation formatting system would also be in scope? since there would no need for modification or incremental parsing
+  <beach> If the "documentation formatting system" works as a batch processor, there wouldn't be much use for either the buffer or the incremental parser.
+  <beach> But if it is interactive, then yes.
+  <beach> I mean, the incremental parser is just Eclector, but with a short circuit for parse results that have not been modified, so if things are not modified, then it boils down to just Eclector.
+  <scymtym> true, but i would like to base as much as possible on a common foundation. for example, the functionality for syntax highlighting should work in an editor and also the documentation formatting system
+  <scymtym> concretely, the difference could be designing interfaces with buffers or with streams as the input representation
+  <beach> Sure, but both those usages would work on an s-expression (or CST) version of the input, so they would be at a higher level, no?
+  <beach> Well, not CST.  parse result.
+  <beach> To include comments and such.
+  <scymtym> the classification part of the syntax highlighting would work on even higher level with some AST-ish elements, i think. but mapping nodes and chosen highlighting styles back to input positions or ranges would somewhat depend on the input representation
+  <beach> Yes, I see.
+  <beach> By the way, in Common Lisp, once the observer has been updated, it becomes a stream that it feeds to Eclector.
+  <beach> Sorry in Second Climacs I mean.
+  <beach> ACTION chose the wrong abbrev. *blush*
+  <scymtym> heh
+  <beach> "cls" is Common Lisp  and "scl" is Second Climacs.
+  <scymtym> ok, i can see two immediate next steps for me: 1) write down the different use-cases and requirements 2) study the second climacs code base
+  <scymtym> maybe i can continue to think about modules and interfaces and present a proposal after that
+  <beach> Sure.  I absolutely do not want to force you to use Second Climacs, but I do think its base is much more sane than that of DREI, and I am also convinced that we should find a common base.
+  <beach> That sounds good.
+  <scymtym> i currently expect to use the buffer and incremental parsing part of second climacs as the base for one module
+  <beach> Again, sounds good.
+  <scymtym> and i would leave out the question of replacing McCLIM's input editor for this consideration
+  <beach> I agree.
+  <scymtym> great, thanks for your input
+  <beach> Pleasure.
+  <beach> For indentation, my latest thinking is to use standard objects to represent various forms.  Like a LET would be represented by a standard object containing an instance of a BINDINGS class, and an instance of an ORDINARY-BODY class.  Generic functions would take such instances as arguments and compute the desired indentation.
+  <beach> Er, I didn't mean for representing the forms themselves.
+  <beach> I mean for representing indentation information of different forms, determined by the operator.
+  <scymtym> i have second climacs somewhat working with eclector. error handling and recovery can now be improved, i think
+  <beach> Still, that's great!
+  <beach> As I recall, I tried to handle all Eclector errors, but I think Eclector can do that better by recovering.
+  <beach> I mean, I think I started on a path of including handlers for all Eclector errors.
+  <beach> So you are using the incremental parser for Common Lisp code?
+  <scymtym> yes, i'm replacing the sicl reader with eclector in the second climacs code base
+  <beach> Excellent!
+  <scymtym> (that's one way to study the code base)
+  <beach> I noticed I have a few changes that I never committed.  One is to update the Clouseau entry point name from INSPECTOR to INSPECT.
+  <beach> But I guess you already fixed that one, yes?
+  <scymtym> there seems to be a merged pull request for that in the commit log. maybe you accepted that pull request in the GitHub web interface and did not update your local repository?
+  <scymtym> but yeah, that's the least of my concerns
+  <beach> Oh, let me pull.
+  <beach> Sure enough.  Also, can I delete the Eclector-test directory now?  And the SICL reader?
+  <scymtym> i think it makes more sense that i submit a pull request that switches to eclector and removes the obsolete parts. there will be conflicts if you do some of that at the same time
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+  <scymtym> beach: you asked whether the redisplay technique in second climacs
+            would be sufficient once McCLIM gets double buffering. i don't know
+            yet, but i can see several aspects. 1) the current technique seems
+            to assume fixed-width fonts 2) currently, a lot of work is done
+            per-wad and all visible wad are repainted . this could be avoided by
+            caching but that would eventually lead to a DREI-style redisplay (i
+            don't know whether that's good or
+  <scymtym> bad) 3) most methods i have seen (or implemented myself) work with a
+            current path through the parse result tree, that is with some
+            context, to determine highlighting style and other properties (CSS
+            is like that as well) while second climacs currently directly
+            associates styles with wads (mostly)
+#+END_EXAMPLE
+* Terminology
+
+  + <<term-fringe>> fringe :: An area left or right of the text that
+       can contain additional information pertaining to visible lines
+       of text. Typical examples of such information are line numbers,
+       version control status, indicators for errors, warnings and
+       notes.
+
+  + <<term-fringe-indicator>> fringe indicator :: A textual or
+       graphical element in the [[term-fringe][fringe]] area.
