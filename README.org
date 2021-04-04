@@ -6,6 +6,7 @@
 #+HTML_HEAD_EXTRA: <style>body { width: 60%; margin-left: 20% } body { margin:40px auto; line-height:1.6; font-size:18px; color:#444; padding:0 10px } h1,h2,h3 { line-height:1.2 } .sidenote { display: block; float: right; width: 30%; border: 2px solid #888; margin: 20px; padding: 3px; }</style>
 
 #+MACRO: cl Common Lisp
+#+MACRO: lisp src_lisp[:exports code]{$1}
 
 * Introduction
 
@@ -75,6 +76,26 @@
        highlighting, like changing the background color) so I can
        immediately estimate the impact of changes and maybe also
        initiate certain changes.
+
+    8. As a user of a code editor, most of my work is done on regions
+       of code that don't work (yet), so I want as much of the
+       functionality as possible to operate on such invalid code.
+
+       Example: Changing a {{{lisp(let)}}} to a {{{lisp(let*)}}} when
+       I've just opened the parens for the second binding).
+
+    9. As a user of the IDE, I would like to be able, to 'pretend' I
+       am working in one environment even while working in another in
+       order to quickly explore or validate my code without actually
+       switching environment.
+
+       Example: I would like to be able to see what {{{lisp(#+(and ccl
+       macos 128bit))}}} looks like even if I'm really on
+       {{{lisp(#+(and sbcl win32 64bit))}}}.
+
+       The IDE should automatically accumulate a list of all
+       combinations of features for which different regions of the
+       source code will be active.
 
 *** Editing
 
@@ -156,7 +177,7 @@
     + Support link to AST or semantic level
     + Support comments and other normally skipped input
     + Highlighting should be able to depend on context: quoted
-      material that is the first argument of src_lisp[]{make-instance}
+      material that is the first argument of {{{lisp(make-instance)}}}
       is a class name.
   + Non-functional
     + Flicker-free redisplay
