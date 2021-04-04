@@ -177,6 +177,11 @@
 
    A proper implementation of this https://techfak.de/~jmoringe/linedit-1.ogv.
 
+   1. As a user of an improved REPL, want the input and the output to
+      appear in separate "buffers", and I often want to be able to
+      restrict things like search commands to the output of one
+      particular input, typically the latest.
+
 ** Basis for a Common Lisp Language Server
 
    An implementation of the [[https://microsoft.github.io/language-server-protocol/][Language Server Protocol]] for Common Lisp
