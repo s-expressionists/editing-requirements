@@ -127,6 +127,43 @@
        have to manually resolve line numbers or other location
        encodings.
 
+*** Linting
+
+    1. As a user of the IDE, I want the package definitions in my
+       project to be checked for problems so that I can keep the
+       package definitions clean. Examples:
+
+       + When a package is {{{lisp(:use)}}}d, at least one symbol
+         should be mentioned.
+
+       + When {{{lisp(:import-from)}}} is used, the imported symbols
+         should be mentioned.
+
+       + Symbols which are {{{lisp(:export)}}}ed should name something
+         in at least one namespace or have a comment explaining why
+         they are exported.
+
+       + An exported symbol should not be spelled with two package
+         markers.
+
+       + A symbol exported from a {{{lisp(:use)}}}d package should not
+         be spelled with any package markers.
+
+    2. As a user of the IDE, I want to be notified if my code violates
+       formatting conventions so I don't have to make a separate
+       effort to clean up my code. Examples:
+
+       + ~) )~.
+
+       + Closing parenthesis on a separate line.
+
+       + Incorrect number of semicolons in a line comment.
+
+    3. As a user of the IDE, I want to be notified if my code contains
+       read-time conditionals that are either unsatisfiable or
+       redundant so that I can correct the issue with loading the code
+       in that environment.
+
 *** Non-functional requirements:
 
     1. Flicker-free updates
